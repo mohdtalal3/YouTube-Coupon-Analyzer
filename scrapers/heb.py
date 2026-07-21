@@ -39,7 +39,7 @@ def _get_search_items(data: dict) -> list:
 
 def _get_image(product: dict) -> str | None:
     images = product.get("productImageUrls", [])
-    for preferred_size in ("LARGE", "MEDIUM", "SMALL"):
+    for preferred_size in ("MEDIUM", "LARGE", "SMALL"):
         for image in images:
             if image.get("size") == preferred_size:
                 return image.get("url")

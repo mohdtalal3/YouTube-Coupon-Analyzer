@@ -353,9 +353,9 @@ def main():
                         except Exception as ie:
                             print(f"    ⚠️  image download failed: {ie}")
                     else:
-                        print(f"    ⚠️  no image URL")
+                        print(f"    ⚠️  no image URL — skipping")
                 else:
-                    print(f"    ⚠️  no result found")
+                    print(f"    ⚠️  no result found — skipping")
             except Exception as e:
                 print(f"    ⚠️  fetch error: {e}")
             return product
@@ -365,8 +365,13 @@ def main():
             for fut in as_completed(futures):
                 fut.result()
 
-        found = sum(1 for d in all_products if d.get("screenshot_file"))
-        print(f"\n  ✓ Images + descriptions fetched for {found}/{len(all_products)} deals")
+        # Drop deals without an image (no HEB result or image download failed)
+        before = len(all_products)
+        all_products = [d for d in all_products if d.get("screenshot_file")]
+        dropped = before - len(all_products)
+        if dropped:
+            print(f"\n  ⚠️  Dropped {dropped} deal(s) with no HEB image")
+        print(f"\n  ✓ Images + descriptions fetched for {len(all_products)}/{before} deals")
 
     elif _source in _IMAGE_ONLY_SOURCES:
         # ── Image-only: details come from YouTube, images fetched from website ─
