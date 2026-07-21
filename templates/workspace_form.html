@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% block title %}{% if workspace %}Edit {{ workspace.name }}{% else %}New Workspace{% endif %}{% endblock %}
+
+{% block page_head %}
+<div class="page-head">
+  <h1>
+    <i class="bi bi-{% if workspace %}pencil{% else %}plus-circle{% endif %}-fill me-2" style="color:#3b82f6"></i>
+    {% if workspace %}Edit Workspace{% else %}New Workspace{% endif %}
+  </h1>
+  <a href="{{ url_for('index') }}" class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-arrow-left me-1"></i> Back
+  </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-8 col-xl-7">
+    {% if error %}
+    <div class="alert alert-danger d-flex align-items-center gap-2 mb-4">
+      <i class="bi bi-exclamation-triangle-fill"></i> {{ error }}
+    </div>
+    {% endif %}
+
+    <div class="card">
+      <div class="card-header">
+        <i class="bi bi-collection me-2"></i>
+        {% if workspace %}Workspace Settings{% else %}Create Workspace{% endif %}
+      </div>
+      <div class="card-body p-4">
+        <form method="POST">
+          <div class="mb-4">
+            <label class="form-label">Workspace Name <span class="text-danger">*</span></label>
+            <input type="text" name="name" class="form-control" required
+                   placeholder="e.g. ALDI, Costco, Sam's Club"
+                   value="{{ workspace.name if workspace else '' }}">
+            <div class="form-text">This will appear in the sidebar and on job records.</div>
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label">
+              <i class="bi bi-globe me-1"></i>Publish Target
+            </label>
+            <select name="publish_target" class="form-select">
+              <option value="aos" {% if workspace and workspace.get('publish_target') == 'aos' %}selected{% endif %}>Aisle of Shame (aisleofshame.com)</option>
+              <option value="retailshout" {% if not workspace or workspace.get('publish_target','retailshout') == 'retailshout' %}selected{% endif %}>RetailShout (retailshout.com)</option>
+            </select>
+            <div class="form-text">Select which WordPress site to publish to. Credentials are read from .env automatically.</div>
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label">Default WordPress Page ID</label>
+            <input type="number" name="default_page_id" class="form-control"
+                   placeholder="e.g. 304402"
+                   value="{{ workspace.default_page_id if workspace and workspace.default_page_id else '' }}">
+            <div class="form-text">
+              Used when running the bot without specifying a different page ID.
+              Find this in your WordPress admin URL bar when editing a page.
+            </div>
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label">
+              <i class="bi bi-image me-1"></i>AI Image Prompt
+              <span class="badge bg-light text-secondary border ms-1" style="font-size:11px;font-weight:500;">Optional</span>
+            </label>
+            <textarea name="image_prompt" class="form-control" rows="10"
+                      placeholder="Enter a custom image generation prompt for this brand's products.&#10;&#10;If left empty, the default prompt.txt file will be used.&#10;&#10;Example:&#10;Create one photorealistic, candid Costco in-store shopping image using the uploaded image as a product-reference image only...">{{ workspace.image_prompt if workspace and workspace.image_prompt else '' }}</textarea>
+            <div class="form-text">
+              This prompt is sent to the KIE AI image generator for every product screenshot.
+              Use it to customize the store environment for this brand (e.g. Costco warehouse style vs ALDI style).
+            </div>
+            <div class="mt-2 p-3 rounded" style="background:#f8fafc;border:1px solid #e2e8f0;font-size:12.5px;">
+              <strong style="color:#475569;"><i class="bi bi-braces me-1"></i>Available Placeholders</strong>
+              <div class="mt-2 d-flex flex-wrap gap-2">
+                <code style="background:#e0f2fe;color:#0369a1;padding:2px 8px;border-radius:4px;">{name}</code>
+                <code style="background:#dcfce7;color:#15803d;padding:2px 8px;border-radius:4px;">{category}</code>
+                <code style="background:#fef9c3;color:#a16207;padding:2px 8px;border-radius:4px;">{price_line}</code>
+                <code style="background:#fae8ff;color:#7e22ce;padding:2px 8px;border-radius:4px;">{description}</code>
+              </div>
+              <div class="mt-2 text-muted" style="font-size:11.5px;">
+                These are replaced automatically per product.
+                <code>{price_line}</code> outputs <code>$X.XX</code> or empty if no price.
+              </div>
+            </div>
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label">
+              <i class="bi bi-shop me-1"></i>Product Source
+              <span class="badge bg-light text-secondary border ms-1" style="font-size:11px;font-weight:500;">Optional</span>
+            </label>
+            <select name="source_type" class="form-select" id="sourceTypeSelect">
+              <option value="none" {% if not workspace or workspace.get('source_type','none') == 'none' %}selected{% endif %}>None — use AI-generated descriptions</option>
+              <option value="meijer" {% if workspace and workspace.get('source_type') == 'meijer' %}selected{% endif %}>Meijer — fetch images from meijer.com (description, price & strategy from YouTube)</option>
+              <option value="heb" {% if workspace and workspace.get('source_type') == 'heb' %}selected{% endif %}>H-E-B — fetch images + descriptions from heb.com (price & strategy from YouTube)</option>
+            </select>
+            <div class="form-text">When set, the bot can scrape real prices, descriptions, and product images directly from the retailer instead of relying on AI.</div>
+          </div>
+
+          <div class="d-flex gap-3 pt-2">
+            <button type="submit" class="btn btn-primary px-4">
+              <i class="bi bi-check-lg me-1"></i>
+              {% if workspace %}Save Changes{% else %}Create Workspace{% endif %}
+            </button>
+            {% if workspace %}
+            <a href="{{ url_for('workspace_detail', workspace_id=workspace.id) }}" class="btn btn-outline-secondary">
+              Cancel
+            </a>
+            {% else %}
+            <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+              Cancel
+            </a>
+            {% endif %}
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,505 @@
+{% extends "base.html" %}
+{% block title %}{{ workspace.name }}{% endblock %}
+
+{% block page_head %}
+<div class="page-head">
+  <div>
+    <h1><i class="bi bi-collection-fill me-2" style="color:#3b82f6"></i>{{ workspace.name }}</h1>
+    {% if workspace.default_page_id %}
+    <small style="color:#64748b;font-size:12px;">
+      <i class="bi bi-link-45deg me-1"></i>Default Page ID: <strong>{{ workspace.default_page_id }}</strong>
+    </small>
+    {% endif %}
+  </div>
+  <div class="d-flex gap-2">
+    <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#scheduleModal">
+      <i class="bi bi-calendar-week me-1"></i> Schedule
+      {% if workspace.schedule and workspace.schedule.enabled %}
+        <span class="badge bg-success ms-1" style="font-size:9px;">ON</span>
+      {% endif %}
+    </button>
+    <a href="{{ url_for('workspace_edit', workspace_id=workspace.id) }}" class="btn btn-sm btn-outline-secondary">
+      <i class="bi bi-pencil me-1"></i> Edit
+    </a>
+    <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
+      <i class="bi bi-trash me-1"></i> Delete
+    </button>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+
+  <!-- Left: Run Bot form -->
+  <div class="col-lg-7">
+    <div class="card">
+      <div class="card-header d-flex align-items-center gap-2">
+        <i class="bi bi-play-circle-fill" style="color:#3b82f6"></i>
+        Run Bot
+      </div>
+      <div class="card-body p-4">
+        <form method="POST" action="{{ url_for('workspace_run', workspace_id=workspace.id) }}" id="runForm">
+
+          <!-- URLs -->
+          <div class="mb-4">
+            <label class="form-label">
+              <i class="bi bi-youtube me-1" style="color:#ef4444"></i>
+              YouTube URLs <span class="text-danger">*</span>
+            </label>
+            <textarea name="urls" class="form-control" rows="5" required
+                      placeholder="Paste one YouTube URL per line:&#10;https://www.youtube.com/watch?v=abc123&#10;https://www.youtube.com/watch?v=def456&#10;https://youtu.be/ghi789"
+                      id="urlsInput"></textarea>
+            <div class="form-text d-flex align-items-center justify-content-between mt-1">
+              <span>One URL per line. Supports youtube.com and youtu.be formats.</span>
+              <span id="urlCount" style="font-weight:600;color:#3b82f6;"></span>
+            </div>
+          </div>
+
+          <!-- Page ID override -->
+          <div class="mb-4">
+            <label class="form-label">
+              <i class="bi bi-wordpress me-1" style="color:#21759b"></i>
+              WordPress Page ID
+            </label>
+            <input type="number" name="page_id" class="form-control"
+                   placeholder="{% if workspace.default_page_id %}Default: {{ workspace.default_page_id }}{% else %}Leave empty to save locally only{% endif %}"
+                   value="">
+            <div class="form-text">
+              {% if workspace.default_page_id %}
+                Leave empty to use workspace default (<strong>{{ workspace.default_page_id }}</strong>).
+              {% else %}
+                No default set — leave empty to skip publishing, or enter a page ID.
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="row g-3 mb-4">
+            <!-- Publish Mode -->
+            <div class="col-sm-6">
+              <label class="form-label">
+                <i class="bi bi-send me-1"></i>Publish Mode
+              </label>
+              <div class="d-flex flex-column gap-2 mt-1">
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" name="publish_mode" id="modePublish" value="publish" checked>
+                  <label class="form-check-label" for="modePublish" style="font-size:13.5px;">
+                    <i class="bi bi-globe me-1 text-success"></i><strong>Publish Live</strong>
+                  </label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" name="publish_mode" id="modeDraft" value="draft">
+                  <label class="form-check-label" for="modeDraft" style="font-size:13.5px;">
+                    <i class="bi bi-file-earmark me-1 text-warning"></i><strong>Save as Draft</strong>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <!-- Product Limit -->
+            <div class="col-sm-6">
+              <label class="form-label">
+                <i class="bi bi-funnel me-1"></i>Product Limit
+              </label>
+              <input type="number" name="product_limit" class="form-control" min="1"
+                     placeholder="All products">
+              <div class="form-text">Max products per video to keep after AI extraction.</div>
+            </div>
+          </div>
+
+          {% if workspace.source_type and workspace.source_type != 'none' %}
+          <!-- Scrape from Source toggle -->
+          <div class="mb-3" id="scrapeSourceSection">
+            <div class="card" style="background:#f0fdf4;border:1px solid #bbf7d0;">
+              <div class="card-body py-3 px-4">
+                <div class="form-check form-switch d-flex align-items-center gap-3 mb-0">
+                  <input class="form-check-input" type="checkbox" role="switch"
+                         name="scrape_source" id="scrapeSource" value="on" checked
+                         style="width:2.5em;height:1.4em;cursor:pointer;">
+                  <div>
+                    <label class="form-check-label" for="scrapeSource" style="font-weight:600;font-size:14px;cursor:pointer;">
+                      <i class="bi bi-shop me-1" style="color:#16a34a"></i>Scrape from {{ workspace.source_type | upper }}
+                    </label>
+                    <div class="form-text mb-0">
+                      Extract product names from video, then fetch real price, description &amp; image from {{ workspace.source_type | upper }}. KIE AI image generation still applies if enabled below.
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          {% endif %}
+
+
+          <!-- AI Images toggle (hidden in coupon mode) -->
+          <div class="mb-4" id="aiImagesSection">
+            <div class="card" style="background:#f8fafc;border:1px solid #e2e8f0;">
+              <div class="card-body py-3 px-4">
+                <div class="form-check form-switch d-flex align-items-center gap-3 mb-0">
+                  <input class="form-check-input" type="checkbox" role="switch"
+                         name="generate_images" id="genImages" value="on" checked
+                         style="width:2.5em;height:1.4em;cursor:pointer;">
+                  <div>
+                    <label class="form-check-label fw-600" for="genImages" style="font-weight:600;font-size:14px;cursor:pointer;">
+                      <i class="bi bi-stars me-1" style="color:#f59e0b"></i>Generate AI Images
+                    </label>
+                    <div class="form-text mb-0">
+                      Uses KIE AI to generate store-style images for each product screenshot.
+                      {% if workspace.image_prompt %}
+                        <span style="color:#10b981;font-weight:600;">✓ Custom prompt configured.</span>
+                      {% else %}
+                        Uses default <code>prompt.txt</code>.
+                      {% endif %}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary w-100 py-2" id="runBtn">
+            <i class="bi bi-play-fill me-2"></i>Run Bot
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right: Workspace info + recent jobs -->
+  <div class="col-lg-5">
+
+    <!-- Workspace info card -->
+    <div class="card mb-4">
+      <div class="card-header"><i class="bi bi-info-circle me-2"></i>Workspace Info</div>
+      <div class="card-body p-0">
+        <table class="table mb-0" style="font-size:13px;">
+          <tr>
+            <td class="ps-4 text-muted" style="width:40%;padding:10px 0 10px 16px;">Name</td>
+            <td class="pe-4" style="padding:10px 16px 10px 0;font-weight:600;">{{ workspace.name }}</td>
+          </tr>
+          <tr>
+            <td class="ps-4 text-muted" style="padding:10px 0 10px 16px;">Default Page ID</td>
+            <td class="pe-4" style="padding:10px 16px 10px 0;">
+              {% if workspace.default_page_id %}
+                <code>{{ workspace.default_page_id }}</code>
+              {% else %}
+                <span class="text-muted fst-italic">Not set</span>
+              {% endif %}
+            </td>
+          </tr>
+          <tr>
+            <td class="ps-4 text-muted" style="padding:10px 0 10px 16px;">Image Prompt</td>
+            <td class="pe-4" style="padding:10px 16px 10px 0;">
+              {% if workspace.image_prompt %}
+                <span class="badge" style="background:#d1fae5;color:#065f46;font-weight:600;font-size:11px;">Custom</span>
+              {% else %}
+                <span class="badge" style="background:#f1f5f9;color:#64748b;font-weight:600;font-size:11px;">Default prompt.txt</span>
+              {% endif %}
+            </td>
+          </tr>
+          <tr>
+            <td class="ps-4 text-muted" style="padding:10px 0 10px 16px;">Product Source</td>
+            <td class="pe-4" style="padding:10px 16px 10px 0;">
+              {% if workspace.source_type and workspace.source_type != 'none' %}
+                <span class="badge" style="background:#dcfce7;color:#15803d;font-weight:600;font-size:11px;">{{ workspace.source_type | upper }}</span>
+              {% else %}
+                <span class="badge" style="background:#f1f5f9;color:#64748b;font-weight:600;font-size:11px;">None</span>
+              {% endif %}
+            </td>
+          </tr>
+          <tr>
+            <td class="ps-4 text-muted" style="padding:10px 0 10px 16px;">Publish Target</td>
+            <td class="pe-4" style="padding:10px 16px 10px 0;">
+              {% if workspace.publish_target == 'aos' %}
+                <span class="badge" style="background:#fef3c7;color:#a16207;font-weight:600;font-size:11px;">Aisle of Shame</span>
+              {% else %}
+                <span class="badge" style="background:#dbeafe;color:#1e40af;font-weight:600;font-size:11px;">RetailShout</span>
+              {% endif %}
+            </td>
+          </tr>
+          <tr>
+            <td class="ps-4 text-muted" style="padding:10px 0 10px 16px;">Channel Schedule</td>
+            <td class="pe-4" style="padding:10px 16px 10px 0;">
+              {% if workspace.schedule and workspace.schedule.enabled %}
+                <span class="badge" style="background:#dcfce7;color:#15803d;font-weight:600;font-size:11px;">
+                  <i class="bi bi-check-circle me-1"></i>Enabled
+                </span>
+                {% set next_run = compute_next_run(workspace.schedule) %}
+                {% if next_run %}
+                  <div class="text-muted mt-1" style="font-size:11.5px;">
+                    Next run: {{ next_run.strftime('%a %b %d, %H:%M %Z') }}
+                  </div>
+                {% endif %}
+              {% else %}
+                <span class="badge" style="background:#f1f5f9;color:#64748b;font-weight:600;font-size:11px;">Disabled</span>
+              {% endif %}
+              {% if workspace.schedule_state and workspace.schedule_state.last_run_at %}
+                <div class="text-muted mt-1" style="font-size:11.5px;">
+                  Last run: {{ workspace.schedule_state.last_run_at[:16].replace('T',' ') }}
+                  ({{ workspace.schedule_state.last_matched_count | default(0) }} matched)
+                </div>
+              {% endif %}
+            </td>
+          </tr>
+          <tr>
+            <td class="ps-4 text-muted" style="padding:10px 0 10px 16px;">Total Jobs</td>
+            <td class="pe-4" style="padding:10px 16px 10px 0;font-weight:600;">{{ jobs | length }}</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+
+    <!-- Recent jobs -->
+    <div class="card">
+      <div class="card-header d-flex align-items-center justify-content-between">
+        <span><i class="bi bi-clock-history me-2"></i>Recent Jobs</span>
+        {% if jobs %}
+        <a href="{{ url_for('jobs_list') }}" class="btn btn-sm btn-outline-secondary" style="font-size:11px;">View all</a>
+        {% endif %}
+      </div>
+      <div class="card-body p-0">
+        {% if jobs %}
+        <div style="max-height: 380px; overflow-y: auto;">
+          {% for job in jobs[:15] %}
+          <a href="{{ url_for('job_detail', job_id=job.id) }}"
+             style="display:flex;align-items:center;justify-content:space-between;padding:11px 16px;border-bottom:1px solid #f1f5f9;text-decoration:none;color:inherit;transition:background .1s;"
+             onmouseover="this.style.background='#f8fafc'"
+             onmouseout="this.style.background='transparent'">
+            <div>
+              <div style="font-size:12px;font-weight:600;color:#0f172a;">
+                {{ job.urls | length }} URL{% if job.urls|length != 1 %}s{% endif %}
+                {% if job.page_id %} → page {{ job.page_id }}{% endif %}
+              </div>
+              <div style="font-size:11px;color:#94a3b8;margin-top:2px;">
+                {{ job.created_at[:16].replace('T',' ') }}
+              </div>
+            </div>
+            <span class="status-badge badge-{{ job.status }}" style="font-size:10px;">
+              {% if job.status == 'running' %}<span class="dot-anim"></span>{% endif %}
+              {{ job.status | capitalize }}
+            </span>
+          </a>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state py-4">
+          <i class="bi bi-inbox" style="font-size:28px;"></i>
+          <p style="font-size:13px;margin-top:8px;">No jobs yet. Run the bot above!</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Schedule modal -->
+<div class="modal fade" id="scheduleModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <form method="POST" action="{{ url_for('workspace_schedule_save', workspace_id=workspace.id) }}">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="bi bi-calendar-week me-2" style="color:#3b82f6"></i>Channel Schedule</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+
+          <div class="mb-4">
+            <div class="form-check form-switch d-flex align-items-center gap-3">
+              <input class="form-check-input" type="checkbox" role="switch" name="schedule_enabled"
+                     id="scheduleEnabled" value="on"
+                     {% if workspace.schedule and workspace.schedule.enabled %}checked{% endif %}
+                     style="width:2.5em;height:1.4em;cursor:pointer;">
+              <label class="form-check-label" for="scheduleEnabled" style="font-weight:600;font-size:14px;cursor:pointer;">
+                Enable weekly schedule
+              </label>
+            </div>
+            <div class="form-text mt-1">
+              When enabled, channels below are scanned automatically at the chosen day/time.
+            </div>
+          </div>
+
+          <div class="row g-3 mb-4">
+            <div class="col-sm-4">
+              <label class="form-label">Day</label>
+              <select name="schedule_day" class="form-select">
+                {% set current_day = workspace.schedule.day if workspace.schedule else 'saturday' %}
+                {% for d in ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'] %}
+                <option value="{{ d }}" {% if current_day == d %}selected{% endif %}>{{ d | capitalize }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-sm-4">
+              <label class="form-label">Time</label>
+              <input type="time" name="schedule_time" class="form-control"
+                     value="{{ workspace.schedule.time if workspace.schedule else '08:00' }}">
+            </div>
+            <div class="col-sm-4">
+              <label class="form-label">Timezone</label>
+              <select name="schedule_timezone" class="form-select">
+                {% set current_tz = workspace.schedule.timezone if workspace.schedule else 'UTC' %}
+                {% for tz in ['UTC','PKT','PDT','EDT','CDT','MDT','EST','CST','MST','PST'] %}
+                <option value="{{ tz }}" {% if current_tz == tz %}selected{% endif %}>{{ tz }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label">
+              <i class="bi bi-youtube me-1" style="color:#ef4444"></i>YouTube Channel URLs
+            </label>
+            <textarea name="youtube_channels" class="form-control" rows="3"
+                      placeholder="One channel URL per line:&#10;https://www.youtube.com/@3rdShiftCouponer">{{ workspace.youtube_channels | join('\n') if workspace.youtube_channels else '' }}</textarea>
+            <div class="form-text">One handle-based channel URL per line.</div>
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label">
+              <i class="bi bi-tags me-1"></i>Source Keywords
+            </label>
+            <input type="text" name="source_keywords" class="form-control"
+                   placeholder="e.g. meijer"
+                   value="{{ workspace.source_keywords | join(', ') if workspace.source_keywords else (workspace.source_type if workspace.source_type and workspace.source_type != 'none' else '') }}">
+            <div class="form-text">
+              Comma-separated. Only videos whose title, description, or channel name contain one of these
+              keywords (case-insensitive) will be scraped. Leave empty to match all videos.
+            </div>
+          </div>
+
+          {% if workspace.source_type and workspace.source_type != 'none' %}
+          <div class="mb-3">
+            <div class="card" style="background:#f0fdf4;border:1px solid #bbf7d0;">
+              <div class="card-body py-3 px-4">
+                <div class="form-check form-switch d-flex align-items-center gap-3 mb-0">
+                  <input class="form-check-input" type="checkbox" role="switch"
+                         name="schedule_scrape_source" id="scheduleScrapeSource" value="on"
+                         {% if not workspace.schedule or workspace.schedule.scrape_source is not defined or workspace.schedule.scrape_source %}checked{% endif %}
+                         style="width:2.5em;height:1.4em;cursor:pointer;">
+                  <div>
+                    <label class="form-check-label" for="scheduleScrapeSource" style="font-weight:600;font-size:14px;cursor:pointer;">
+                      <i class="bi bi-shop me-1" style="color:#16a34a"></i>Scrape from {{ workspace.source_type | upper }}
+                    </label>
+                    <div class="form-text mb-0">
+                      Fetch real price, description &amp; image from {{ workspace.source_type | upper }} website.
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          {% endif %}
+
+          <div class="mb-4">
+            <div class="card" style="background:#f8fafc;border:1px solid #e2e8f0;">
+              <div class="card-body py-3 px-4">
+                <div class="form-check form-switch d-flex align-items-center gap-3 mb-0">
+                  <input class="form-check-input" type="checkbox" role="switch"
+                         name="schedule_generate_images" id="scheduleGenImages" value="on"
+                         {% if not workspace.schedule or workspace.schedule.generate_images is not defined or workspace.schedule.generate_images %}checked{% endif %}
+                         style="width:2.5em;height:1.4em;cursor:pointer;">
+                  <div>
+                    <label class="form-check-label" for="scheduleGenImages" style="font-weight:600;font-size:14px;cursor:pointer;">
+                      <i class="bi bi-stars me-1" style="color:#f59e0b"></i>Generate AI Images
+                    </label>
+                    <div class="form-text mb-0">
+                      Uses KIE AI to generate store-style images for each product screenshot.
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {% if workspace.schedule_state and workspace.schedule_state.last_run_status %}
+          <div class="p-3 rounded" style="background:#f8fafc;border:1px solid #e2e8f0;font-size:12.5px;">
+            <strong>Last run:</strong> {{ workspace.schedule_state.last_run_at[:16].replace('T',' ') if workspace.schedule_state.last_run_at else '—' }}
+            &middot; <strong>Status:</strong> {{ workspace.schedule_state.last_run_status }}
+            &middot; <strong>Matched:</strong> {{ workspace.schedule_state.last_matched_count | default(0) }}
+            {% if workspace.schedule_state.last_errors %}
+              <div class="text-danger mt-1">{{ workspace.schedule_state.last_errors | join('; ') }}</div>
+            {% endif %}
+          </div>
+          {% endif %}
+
+        </div>
+        <div class="modal-footer d-flex justify-content-between">
+          <button type="submit"
+                  form="disableScheduleForm"
+                  class="btn btn-outline-danger">
+            <i class="bi bi-slash-circle me-1"></i>Disable
+          </button>
+          <div class="d-flex gap-2">
+            <button type="submit" form="runNowForm" class="btn btn-outline-primary">
+              <i class="bi bi-play-fill me-1"></i>Run Now
+            </button>
+            <button type="submit" class="btn btn-primary">
+              <i class="bi bi-check-lg me-1"></i>Save
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<form method="POST" id="runNowForm" action="{{ url_for('workspace_schedule_run_now', workspace_id=workspace.id) }}"></form>
+
+<!-- Scan loading overlay -->
+<div id="scanOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:9999;align-items:center;justify-content:center;">
+  <div class="bg-white rounded-3 p-4 shadow text-center" style="min-width:300px;">
+    <div class="spinner-border text-primary mb-3" role="status" style="width:3rem;height:3rem;"></div>
+    <div style="font-weight:600;font-size:15px;color:#1e293b;">Scanning YouTube channels…</div>
+    <div class="text-muted mt-1" style="font-size:12.5px;">Fetching videos and matching keywords. This may take a moment.</div>
+  </div>
+</div>
+<form method="POST" id="disableScheduleForm" action="{{ url_for('workspace_schedule_disable', workspace_id=workspace.id) }}"></form>
+
+<!-- Delete confirmation modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title text-danger"><i class="bi bi-trash me-2"></i>Delete Workspace</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        Are you sure you want to delete <strong>{{ workspace.name }}</strong>?
+        This will not delete any job records or run folders — just the workspace configuration.
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <form method="POST" action="{{ url_for('workspace_delete', workspace_id=workspace.id) }}">
+          <button type="submit" class="btn btn-danger">Delete</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Live URL counter
+  const urlsInput = document.getElementById('urlsInput');
+  const urlCount = document.getElementById('urlCount');
+  function updateCount() {
+    const lines = urlsInput.value.split('\n').filter(l => l.trim().length > 0);
+    urlCount.textContent = lines.length > 0 ? lines.length + ' URL' + (lines.length !== 1 ? 's' : '') : '';
+  }
+  urlsInput.addEventListener('input', updateCount);
+
+  // Disable run button on submit to prevent double-click
+  document.getElementById('runForm').addEventListener('submit', function() {
+    const btn = document.getElementById('runBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Starting...';
+  });
+
+  // Show loading overlay when Run Now is clicked
+  document.getElementById('runNowForm').addEventListener('submit', function() {
+    const overlay = document.getElementById('scanOverlay');
+    overlay.style.display = 'flex';
+  });
+</script>
+{% endblock %}

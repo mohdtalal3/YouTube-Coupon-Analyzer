@@ -1,0 +1,104 @@
+.image_cache.json
+.env
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+unused
+# Logs
+logs/
+*.log
+docs
+.env
+# Image files
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.bmp
+*.svg
+*.webp
+test_all_scrapers.py
+# CSV files from scraped ads
+*_products.csv
+*_data.csv
+
+# All scraped data stored in centralized folder
+scraping_data/
+
+# Legacy paths (kept for backward compatibility)
+# Exclude CSV files in ads/publix directories
+publix_scraper/ads_scraper/publix/**/*.csv
+
+# Aldi scraped ad directories (dated directories)
+aldi_scraper/Aldi_WeeklyAd_*/
+aldi_scraper/Aldi_InStoreAd_*/
+aldi_scraper/Aldi_InstoreAd_*/
+aldi_scraper/Aldi_Finds/Aldi_Finds_*/
+
+# Publix scraped ad directories (dated directories)
+publix_scraper/ads_scraper/publix/Publix_*/
+
+# HEB scraped ad directories (dated directories)
+heb_scraper/heb/HEB_*/
+
+# Dollar General scraped ad directories (dated directories)
+dollar_general/dollar_general/DollarGeneral*/
+
+# Kroger scraped ad directories
+kroger/Kroger/Kroger*/
+
+# Target scraped ad directories
+target/Target/Target*/
+
+# JSON response files
+*_response.json
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+t.php
+
+testing.json
+
+test_slack_notification.py
+foodlion_pages_scraper/README.md
+test.py
+
+slack/run_foodlion_pages_complete_workflow.sh
+extras
+.image_cache.json
+
+youtube analyzer bot/main_backup.py
+
+youtube analyzer bot/.env
+youtube analyzer bot/run_F2X6NwIR79k
+
+#youtube analyzer bot/run_*
+run_*/
+**/run_*/
+run1.py
+t.json
+extras
+
+data
+COMMANDS.md
+youtube_analyzer.mov
+
+CONTEXT.md

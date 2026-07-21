@@ -1,0 +1,126 @@
+Create exactly ONE photorealistic, candid iPhone-style shopping photo of {name} inside a modern U.S. Meijer store.
+
+PRODUCT INPUTS:
+{name}: {name}
+{category}: {category}
+{price_line}: {price_line}
+{description}: {description}
+
+IMAGE FALLBACK LOGIC:
+Use the attached product image as the primary visual reference for the featured product. If any input field is missing, empty, vague, or marked unknown, infer it from the attached image using visible clues such as packaging shape, package size, quantity, food type, storage cues, labels, material, product category, and how the item is normally displayed in Meijer.
+
+Infer missing values in this order:
+1. Product identity from {name}, then visible packaging text.
+2. Category from {category}, then {description}, then visible product type.
+3. Product size from {product_size}, then visible packaging scale.
+4. Correct department from product type, not the reference background.
+5. Display type from correct Meijer department and realistic product size.
+6. Handling mode from product size, weight, shape, and whether it can realistically be held with one hand.
+
+Use the attached product image ONLY to identify and preserve the featured product. Preserve the product's brand, packaging, colors, shape, size, quantity, flavor or scent, printed design, and overall proportions. Do not copy the original background, crop, hand, camera angle, display, shelf layout, nearby products, or price tag placement.
+
+HANDLING + SIZE LOGIC:
+If {handling_mode} is provided, follow it only if it is realistic for the product's size, weight, shape, and department. If it conflicts with realistic scale or Meijer placement, override it with the most realistic handling.
+
+If the product is small or medium-sized and realistically handheld, show exactly one female hand naturally holding the product in the foreground, like a shopper showing a recent Meijer find.
+
+If the product is large, bulky, heavy, oversized, awkward, fragile, or not realistic to hold with one hand, do not force the hand to hold it. Instead, show the product naturally resting on the correct Meijer shelf, pallet, refrigerated case, freezer, endcap, display table, rolling bin, seasonal display, or floor display. A female hand may appear only as a small partial pointing or touching hand if natural, but the product must remain fully supported by the display.
+
+Usually handheld:
+- Small food packages
+- Snacks
+- Boxed meals
+- Beauty items
+- Candles
+- Small kitchen tools
+- Planners
+- Notebooks
+- Small toys
+- Small household items
+- Packaged personal care items
+
+Usually left on display:
+- Large appliances
+- Storage bins
+- Furniture
+- Rugs
+- Large décor
+- Oversized cookware
+- Cases of drinks
+- Heavy pet food bags
+- Bulk paper goods
+- Large seasonal items
+- Large toys
+- Floor mats
+- Plants
+- Fans
+- Coolers
+- Anything too wide, tall, or heavy for a realistic one-hand hold
+
+HAND STYLE:
+If a hand is present, it must look consistent across generations: one female hand, light-to-medium skin tone, neatly groomed fingers, short-to-medium rounded or soft almond nails, and nude beige, sheer nude, or soft pink neutral nail polish. No red nails, bright polish, French manicure, chipped polish, rings, bracelets, watches, tattoos, gloves, visible sleeves, extra fingers, or distorted fingers.
+
+The hand grip, touch, or pointing pose must realistically match the product's shape, size, and weight. Do not block the product name, main label, flavor, scent, or packaging design.
+
+PRODUCT PLACEMENT LOGIC:
+Place the product in the correct Meijer department based on the product itself, not the reference image. Use this priority: {name}, then {category}, then {description}, then visible packaging and product shape.
+
+Correct placement rules:
+Frozen edible food must be inside a freezer unless the hand is actively lifting it. Refrigerated food or beverages must be in a cooler. Shelf-stable food must be on grocery shelves or shelf-ready displays. Produce must be in produce bins or display tables. Meat or seafood must be in refrigerated meat cases. Bakery products must be on bakery shelves or bread racks. Prepared meals, pizza, salads, sushi, or dips must be placed in a freezer if frozen or a cooler if refrigerated.
+
+Household, beauty, personal care, pet items, office supplies, kitchen tools, drinkware, home décor, seasonal merchandise, apparel, toys, electronics, sporting goods, and garden items must appear in their appropriate Meijer departments using realistic shelving, endcaps, floor displays, pallet displays, rolling bins, or seasonal displays.
+
+If {display_type} is provided, use it only if it matches the correct department. Product classification and realistic size always override {display_type} when they conflict.
+
+FROZEN FOOD RULE:
+Frozen food must remain inside a chest freezer, glass-door freezer, upright freezer, or frozen wall case unless exactly one hand is actively lifting it. Never place frozen food on top of a freezer, on the freezer rim, leaning against a freezer, floating, on a dry grocery shelf, on an endcap, on a pallet, or on the floor.
+
+NON-FOOD RULE:
+Never place non-food products inside refrigerated coolers or food freezers. Non-food items must appear on standard shelving, endcaps, promotional displays, rolling bins, seasonal displays, pallet displays, housewares shelving, apparel fixtures, toy shelving, garden displays, or floor displays.
+
+MEIJER ENVIRONMENT:
+The environment must clearly feel like a modern U.S. Meijer supercenter.
+
+Include realistic Meijer characteristics:
+- Wide shopping aisles
+- Bright LED lighting
+- Tall retail shelving
+- Polished concrete or tile floors
+- Grocery shelves with shelf-ready displays
+- Modern refrigerated coolers and freezer aisles
+- Spacious produce department
+- Bakery department
+- Meat department
+- Pharmacy
+- Health & beauty section
+- Home goods
+- Apparel
+- Toys
+- Electronics
+- Sporting goods
+- Seasonal department
+- Garden center when appropriate
+- Authentic Meijer-style shelf labels
+- Subtle red Meijer branding accents where naturally visible
+- Promotional endcaps and seasonal displays
+
+Avoid visual cues from Walmart, Target, Costco, Sam's Club, ALDI, Lidl, Trader Joe's, Kroger, Publix, CVS, Walgreens, Dollar General, and Dollar Tree.
+
+Avoid warehouse bulk pallet layouts, luxury grocery interiors, boutique fixtures, oversized wholesale displays, and tiny discount-store aisles.
+
+COMPOSITION:
+Use {camera_angle} if provided. If not provided, choose a natural handheld shopper perspective such as straight-on close-up, slight three-quarter angle, side angle, or mild top-down angle.
+
+Create a clearly different original photo from the reference image by changing the camera angle, crop, viewing distance, hand position, product position, shelf arrangement, display style, nearby products, and price tag placement.
+
+The product should be sharp, readable, and dominant, with enough softly blurred background to clearly establish the Meijer setting.
+
+PRICE TAG:
+If {price_line} is provided, show exactly ONE realistic Meijer-style shelf price tag using only this price: {price_line}. The tag must clearly belong to {name}, be naturally placed on the shelf, freezer, cooler, display, or bin, and be readable but not oversized. Do not invent prices, change the price, add promotions, coupons, or multiple readable price tags.
+
+If {price_line} is empty, show no readable price.
+
+REALISM:
+Use realistic iPhone photo quality with natural store lighting, mild background blur, soft shadows, slight handheld feel, subtle camera grain, ordinary shelf imperfections, accurate product scale, realistic reflections, believable product support, and realistic hand anatomy.
+
+Do not generate a collage, split screen, grid, product cutout, white-background product shot, text overlay, caption, sticker, arrow, watermark, border, or social media UI.

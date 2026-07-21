@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}All Jobs{% endblock %}
+
+{% block page_head %}
+<div class="page-head">
+  <h1><i class="bi bi-list-task me-2" style="color:#3b82f6"></i>All Jobs</h1>
+  <span style="color:#64748b;font-size:13px;">{{ jobs | length }} total</span>
+</div>
+{% endblock %}
+
+{% block content %}
+
+{% if jobs %}
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0" id="jobsTable">
+      <thead>
+        <tr>
+          <th>Workspace</th>
+          <th>Status</th>
+          <th>URLs</th>
+          <th>WordPress Page</th>
+          <th>Mode</th>
+          <th>AI Images</th>
+          <th>Limit</th>
+          <th>Created</th>
+          <th>Finished</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for job in jobs %}
+        <tr>
+          <td><strong>{{ job.workspace_name }}</strong></td>
+          <td>
+            <span class="status-badge badge-{{ job.status }}">
+              {% if job.status == 'running' %}<span class="dot-anim"></span>{% endif %}
+              {{ job.status | capitalize }}
+            </span>
+          </td>
+          <td>
+            <span title="{{ job.urls | join('\n') }}" style="cursor:default;">
+              {{ job.urls | length }} URL{% if job.urls|length != 1 %}s{% endif %}
+            </span>
+          </td>
+          <td>
+            {% if job.page_id %}
+              <a href="https://retailshout.com/?page_id={{ job.page_id }}" target="_blank" style="font-size:12px;white-space:nowrap;">
+                <i class="bi bi-box-arrow-up-right me-1"></i>{{ job.page_id }}
+              </a>
+            {% else %}
+              <span class="text-muted">—</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if job.page_id %}
+              <span class="{% if job.publish_mode == 'publish' %}text-success{% else %}text-warning{% endif %}" style="font-size:12px;">
+                {{ job.publish_mode | capitalize }}
+              </span>
+            {% else %}
+              <span class="text-muted" style="font-size:12px;">Local</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if job.generate_images %}
+              <i class="bi bi-check-circle-fill text-success"></i>
+            {% else %}
+              <i class="bi bi-x-circle text-muted"></i>
+            {% endif %}
+          </td>
+          <td>{{ job.product_limit or '—' }}</td>
+          <td style="color:#64748b;font-size:12px;white-space:nowrap;">
+            {{ job.created_at[:16].replace('T',' ') if job.created_at else '—' }}
+          </td>
+          <td style="color:#64748b;font-size:12px;white-space:nowrap;">
+            {{ job.finished_at[:16].replace('T',' ') if job.finished_at else '—' }}
+          </td>
+          <td>
+            <a href="{{ url_for('job_detail', job_id=job.id) }}" class="btn btn-sm btn-outline-primary" style="white-space:nowrap;">
+              <i class="bi bi-terminal me-1"></i>Logs
+            </a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% else %}
+<div class="empty-state">
+  <i class="bi bi-list-task"></i>
+  <p style="font-size:15px;font-weight:500;">No jobs have been run yet.</p>
+  <p>Go to a workspace and click <strong>Run Bot</strong> to start.</p>
+  <a href="{{ url_for('index') }}" class="btn btn-primary mt-2">
+    <i class="bi bi-arrow-left me-1"></i> Back to Dashboard
+  </a>
+</div>
+{% endif %}
+
+{% endblock %}
