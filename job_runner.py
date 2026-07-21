@@ -90,6 +90,7 @@ def launch_scrape_job(
         "scrape_source": scrape_source_flag,
         "source_type": ws.get("source_type", "none"),
         "publish_mode": publish_mode,
+        "publish_target": ws.get("publish_target", "retailshout"),
         "product_limit": product_limit,
         "status": "pending",
         "triggered_by": triggered_by,

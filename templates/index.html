@@ -145,7 +145,8 @@
           <td>{{ job.urls | length }} URL{% if job.urls|length != 1 %}s{% endif %}</td>
           <td>
             {% if job.page_id %}
-              <a href="https://retailshout.com/?page_id={{ job.page_id }}" target="_blank" style="font-size:12px;white-space:nowrap;">
+              {% set _wp_base = 'https://www.aisleofshame.com' if job.publish_target == 'aos' else 'https://www.retailshout.com' %}
+              <a href="{{ _wp_base }}/?page_id={{ job.page_id }}" target="_blank" style="font-size:12px;white-space:nowrap;">
                 <i class="bi bi-box-arrow-up-right me-1"></i>{{ job.page_id }}
               </a>
             {% else %}
