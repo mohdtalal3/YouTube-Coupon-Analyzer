@@ -134,9 +134,9 @@ def main():
     with open(run_dir / "videos.json", "w", encoding="utf-8") as f:
         json.dump(videos, f, ensure_ascii=False, indent=2)
 
-    # TEMP: exit here for testing — remove later
-    print("\n🛑 TEMP BREAK: Videos fetched and saved. Exiting before transcription.\n")
-    sys.exit(0)
+    # # TEMP: exit here for testing — remove later
+    # print("\n🛑 TEMP BREAK: Videos fetched and saved. Exiting before transcription.\n")
+    # sys.exit(0)
 
     # ── STEP 2 + 3: Transcripts + AI Extraction (chained) ────────────────────
     print_section("Steps 2+3 — Transcripts & AI Product Extraction")

@@ -1,4 +1,5 @@
 import json
+import re
 from pathlib import Path
 
 import requests
@@ -88,12 +89,16 @@ class HEBSearcher:
 
                 product = coupon_items[0]
 
+                description = product.get("productDescription", "")
+                if description:
+                    description = re.sub(r'<[^>]+>', '', description)
+
                 return {
                     "name":        product.get("fullDisplayName") or product.get("displayName", product_name),
                     "price":       "",
                     "image_url":   _get_image(product) or "",
                     "product_url": f"https://www.heb.com{product.get('productPageURL', '')}" if product.get("productPageURL") else "",
-                    "description": product.get("productDescription", ""),
+                    "description": description,
                     "brand":       "",
                     "size":        "",
                 }
