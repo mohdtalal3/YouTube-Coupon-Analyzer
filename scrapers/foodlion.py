@@ -2,7 +2,7 @@
 
 from curl_cffi import requests
 from bs4 import BeautifulSoup
-from urllib.parse import quote, urlparse
+from urllib.parse import quote
 from dotenv import load_dotenv
 import json
 import os
@@ -15,7 +15,7 @@ _SCRAPPEY_API_KEY = os.getenv("SCRAPPEY_API_KEY")
 _SCRAPPEY_URL = f"https://publisher.scrappey.com/api/v1?key={_SCRAPPEY_API_KEY}"
 
 _MAX_RETRIES = 3
-_TOP_N = 20
+_TOP_N = 50
 _DOMAIN = "foodlion.com"
 
 
@@ -37,10 +37,9 @@ class FoodLionSearcher:
 
     @staticmethod
     def _is_foodlion_url(url: str) -> bool:
-        netloc = urlparse(url).netloc.lower()
-        return netloc == _DOMAIN or netloc.endswith("." + _DOMAIN)
+        return "foodlion" in url.lower()
 
-    def _search_keyword(self, keyword: str, product_name: str) -> dict | None:
+    def _search_keyword(self, keyword: str, product_name: str, fallback_first: bool = False) -> dict | None:
         """Run one Bing image search (via Scrappey) and return the first
         result (among the top _TOP_N) whose product page (purl) is on
         foodlion.com.
@@ -67,6 +66,7 @@ class FoodLionSearcher:
                 soup = BeautifulSoup(html, "html.parser")
                 tags = soup.select("li[data-idx] a.iusc")[:_TOP_N]
 
+                first_result = None
                 for tag in tags:
                     m_data = tag.get("m")
                     if not m_data:
@@ -78,11 +78,10 @@ class FoodLionSearcher:
 
                     img_url = data.get("murl", "")
                     purl = data.get("purl", "")
-                    print(f"  [foodlion] found: image_url={img_url!r} purl={purl!r}")
-                    if not img_url or not self._is_foodlion_url(purl):
+                    if not img_url:
                         continue
 
-                    return {
+                    result = {
                         "name":        data.get("t", product_name),
                         "price":       "",
                         "image_url":   img_url,
@@ -91,6 +90,15 @@ class FoodLionSearcher:
                         "brand":       "",
                         "size":        "",
                     }
+
+                    if first_result is None:
+                        first_result = result
+
+                    if self._is_foodlion_url(purl):
+                        return result
+
+                if fallback_first and first_result:
+                    return first_result
 
                 return None  # request succeeded, no foodlion.com match in top _TOP_N
 
@@ -114,7 +122,7 @@ class FoodLionSearcher:
         if result:
             return result
 
-        result = self._search_keyword(f"{product_name} foodlion", product_name)
+        result = self._search_keyword(f"{product_name} foodlion", product_name, fallback_first=True)
         if result:
             return result
 
@@ -124,7 +132,7 @@ class FoodLionSearcher:
 
 if __name__ == "__main__":
     searcher = FoodLionSearcher(proxy=os.getenv("STATIC_PROXY"))
-    result = searcher.search("Febreze Fabric Refresher")
+    result = searcher.search("aveeno moisturizer")
     if result:
         print(json.dumps(result, indent=2, ensure_ascii=False))
     else:

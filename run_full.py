@@ -158,18 +158,18 @@ def main():
 
         print(f"  [2] Fetching transcript...")
         transcript_success = False
-        for attempt in range(1, 4):
+        for attempt in range(1, 7):
             try:
                 fetch_transcript(url, output_file=transcript_file)
                 transcript_success = True
                 break
             except Exception as e:
-                if attempt < 3:
-                    print(f"  ⚠️  Attempt {attempt}/3 failed: {e}")
+                if attempt < 6:
+                    print(f"  ⚠️  Attempt {attempt}/6 failed: {e}")
                     print(f"  Retrying in 5 seconds...")
                     time.sleep(5)
                 else:
-                    print(f"  ⚠️  Transcript failed after 3 attempts for {url}: {e} — skipping video")
+                    print(f"  ⚠️  Transcript failed after 6 attempts for {url}: {e} — skipping video")
 
         if not transcript_success:
             if video_dir.exists():

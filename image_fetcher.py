@@ -102,5 +102,5 @@ def fetch_coupon_images(
     found = [d for d in results if d.get("screenshot_file")]
     skipped = len(results) - len(found)
     if skipped:
-        print(f"\n  ⚠️  Dropped {skipped} deal(s) with no Meijer image")
+        print(f"\n  ⚠️  Dropped {skipped} deal(s) with no {source} image")
     return found
