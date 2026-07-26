@@ -146,7 +146,7 @@ class FoodLionSearcher:
         if result:
             return result
 
-        fallback = fallback_2 or fallback_1
+        fallback = fallback_2 
         if fallback:
             return fallback
 
