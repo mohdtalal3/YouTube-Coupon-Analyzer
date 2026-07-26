@@ -15,7 +15,7 @@ _SCRAPPEY_API_KEY = os.getenv("SCRAPPEY_API_KEY")
 _SCRAPPEY_URL = f"https://publisher.scrappey.com/api/v1?key={_SCRAPPEY_API_KEY}"
 
 _MAX_RETRIES = 3
-_TOP_N = 25
+_TOP_N = 30
 _DOMAIN = "foodlion.com"
 
 
@@ -57,7 +57,7 @@ class FoodLionSearcher:
             "cmd": "request.get",
             "url": url,
             "proxyCountry": self.proxy_country,
-            #"requestType": "request",
+            "requestType": "request",
         }
 
         for attempt in range(1, _MAX_RETRIES + 1):
