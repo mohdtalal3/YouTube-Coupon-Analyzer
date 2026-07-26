@@ -113,7 +113,7 @@ class FoodLionSearcher:
                     return None, None
         return None, None
 
-    def _search_keyword_multi(self, keyword: str, product_name: str, tries: int = 1) -> tuple[dict | None, dict | None]:
+    def _search_keyword_multi(self, keyword: str, product_name: str, tries: int = 3) -> tuple[dict | None, dict | None]:
         """Search the same keyword up to `tries` times since Bing/Scrappey
         results can vary between identical requests. Returns as soon as a
         foodlion match is found; otherwise keeps the first usable fallback
