@@ -94,7 +94,7 @@
               <option value="none" {% if not workspace or workspace.get('source_type','none') == 'none' %}selected{% endif %}>None — use AI-generated descriptions</option>
               <option value="meijer" {% if workspace and workspace.get('source_type') == 'meijer' %}selected{% endif %}>Meijer — fetch images from meijer.com (description, price & strategy from YouTube)</option>
               <option value="heb" {% if workspace and workspace.get('source_type') == 'heb' %}selected{% endif %}>H-E-B — fetch images + descriptions from heb.com (price & strategy from YouTube)</option>
-              <option value="foodlion" {% if workspace and workspace.get('source_type') == 'foodlion' %}selected{% endif %}>Food Lion — fetch images from foodlion.com (description, price & strategy from YouTube)</option>
+              <option value="foodlion" {% if workspace and workspace.get('source_type') == 'foodlion' %}selected{% endif %}>Food Lion — fetch images from foodlion.com (description, price & strategy from YouTube, same as Meijer)</option>
             </select>
             <div class="form-text">When set, the bot can scrape real prices, descriptions, and product images directly from the retailer instead of relying on AI.</div>
           </div>

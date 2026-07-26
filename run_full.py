@@ -226,12 +226,12 @@ def main():
     # Name, price, and strategy are kept from YouTube; image and description come from the source.
     _IMAGE_DESC_SOURCES = {
         "heb": ("scrapers.heb", "HEBSearcher"),
-        "foodlion": ("scrapers.foodlion", "FoodLionSearcher"),
     }
 
     # Sources used for IMAGE ONLY — all deal details still come from YouTube.
     _IMAGE_ONLY_SOURCES = {
         "meijer": ("scrapers.meijer", "MeijerSearcher"),
+        "foodlion": ("scrapers.foodlion", "FoodLionSearcher"),
     }
 
     _source = args.source or "meijer"

@@ -2,16 +2,21 @@
 
 from curl_cffi import requests
 from bs4 import BeautifulSoup
-from urllib.parse import quote
+from urllib.parse import quote, urlparse
+from dotenv import load_dotenv
 import json
+import os
 
-_HEADERS = {
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,/;q=0.8",
-    "Accept-Language": "en-US,en;q=0.9",
-    "Upgrade-Insecure-Requests": "1",
-}
+load_dotenv()
+
+_PROXY_COUNTRY = "UnitedStates"
+
+_SCRAPPEY_API_KEY = os.getenv("SCRAPPEY_API_KEY")
+_SCRAPPEY_URL = f"https://publisher.scrappey.com/api/v1?key={_SCRAPPEY_API_KEY}"
 
 _MAX_RETRIES = 3
+_TOP_N = 20
+_DOMAIN = "foodlion.com"
 
 
 class FoodLionSearcher:
@@ -23,62 +28,103 @@ class FoodLionSearcher:
     """
 
     def __init__(self, proxy: str | None = None):
-        self.proxies = {"http": proxy, "https": proxy} if proxy else None
+        # Requests are proxied through Scrappey, which handles the exit IP
+        # itself, so the raw `proxy` string (e.g. STATIC_PROXY) is unused here.
+        self.proxy_country = _PROXY_COUNTRY
 
     def warmup(self):
         pass
 
-    def search(self, product_name: str) -> dict | None:
-        """Search for a product image and return a normalised dict or None if not found.
+    @staticmethod
+    def _is_foodlion_url(url: str) -> bool:
+        netloc = urlparse(url).netloc.lower()
+        return netloc == _DOMAIN or netloc.endswith("." + _DOMAIN)
 
-        Returned keys: name, price, image_url, product_url, description, brand, size
+    def _search_keyword(self, keyword: str, product_name: str) -> dict | None:
+        """Run one Bing image search (via Scrappey) and return the first
+        result (among the top _TOP_N) whose product page (purl) is on
+        foodlion.com.
         """
-        keyword = f"{product_name} site:foodlion.com"
-        url = f"https://www.bing.com/images/search?q={quote(keyword)}&form=HDRSC2"
+        url = f"https://www.bing.com/images/search?q={quote(keyword)}&form=VNXTR&first=1"
+        payload = {
+            "cmd": "request.get",
+            "url": url,
+            "proxyCountry": self.proxy_country,
+            "requestType": "request",
+        }
 
         for attempt in range(1, _MAX_RETRIES + 1):
             try:
-                resp = requests.get(
-                    url,
-                    headers=_HEADERS,
-                    impersonate="chrome107",
-                    proxies=self.proxies,
-                    timeout=30,
-                )
+                resp = requests.post(_SCRAPPEY_URL, json=payload, timeout=60)
                 resp.raise_for_status()
 
-                soup = BeautifulSoup(resp.text, "html.parser")
-                tag = soup.select_one("li[data-idx='1'] a.iusc")
-                if not tag:
+                data = resp.json()
+                html = data.get("solution", {}).get("response", "")
+                if not html:
+                    print(f"  [foodlion] Scrappey returned no response for {keyword!r}: {data.get('data')}")
                     return None
 
-                data = json.loads(tag.get("m"))
-                img_url = data.get("murl", "")
-                title = data.get("t", product_name)
+                soup = BeautifulSoup(html, "html.parser")
+                tags = soup.select("li[data-idx] a.iusc")[:_TOP_N]
 
-                if not img_url:
-                    return None
+                for tag in tags:
+                    m_data = tag.get("m")
+                    if not m_data:
+                        continue
+                    try:
+                        data = json.loads(m_data)
+                    except (json.JSONDecodeError, TypeError):
+                        continue
 
-                return {
-                    "name":        title,
-                    "price":       "",
-                    "image_url":   img_url,
-                    "product_url": data.get("purl", ""),
-                    "description": "",
-                    "brand":       "",
-                    "size":        "",
-                }
+                    img_url = data.get("murl", "")
+                    purl = data.get("purl", "")
+                    print(f"  [foodlion] found: image_url={img_url!r} purl={purl!r}")
+                    if not img_url or not self._is_foodlion_url(purl):
+                        continue
+
+                    return {
+                        "name":        data.get("t", product_name),
+                        "price":       "",
+                        "image_url":   img_url,
+                        "product_url": purl,
+                        "description": "",
+                        "brand":       "",
+                        "size":        "",
+                    }
+
+                return None  # request succeeded, no foodlion.com match in top _TOP_N
 
             except Exception as e:
-                print(f"  [foodlion] Attempt {attempt}/{_MAX_RETRIES} failed: {e}")
+                print(f"  [foodlion] Attempt {attempt}/{_MAX_RETRIES} failed for {keyword!r}: {e}")
                 if attempt == _MAX_RETRIES:
                     return None
         return None
 
+    def search(self, product_name: str) -> dict | None:
+        """Search for a product image and return a normalised dict or None if not found.
+
+        Checks the top _TOP_N Bing image results for a foodlion.com product
+        page. If none match, retries with a simpler "<name> foodlion" query
+        (no site: operator) and checks the top _TOP_N again. If that also has
+        no foodlion.com match, the keyword is skipped (returns None).
+
+        Returned keys: name, price, image_url, product_url, description, brand, size
+        """
+        result = self._search_keyword(f"{product_name} site:foodlion.com", product_name)
+        if result:
+            return result
+
+        result = self._search_keyword(f"{product_name} foodlion", product_name)
+        if result:
+            return result
+
+        print(f"  [foodlion] Skipping {product_name!r} — no foodlion.com image in top {_TOP_N} results")
+        return None
+
 
 if __name__ == "__main__":
-    searcher = FoodLionSearcher()
-    result = searcher.search("Dannon Light & Fit yogurt")
+    searcher = FoodLionSearcher(proxy=os.getenv("STATIC_PROXY"))
+    result = searcher.search("Febreze Fabric Refresher")
     if result:
         print(json.dumps(result, indent=2, ensure_ascii=False))
     else:
