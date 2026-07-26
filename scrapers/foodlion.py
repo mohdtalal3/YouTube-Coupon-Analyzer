@@ -15,7 +15,7 @@ _SCRAPPEY_API_KEY = os.getenv("SCRAPPEY_API_KEY")
 _SCRAPPEY_URL = f"https://publisher.scrappey.com/api/v1?key={_SCRAPPEY_API_KEY}"
 
 _MAX_RETRIES = 3
-_TOP_N = 50
+_TOP_N = 25
 _DOMAIN = "foodlion.com"
 
 
@@ -57,7 +57,7 @@ class FoodLionSearcher:
             "cmd": "request.get",
             "url": url,
             "proxyCountry": self.proxy_country,
-            "requestType": "request",
+            #"requestType": "request",
         }
 
         for attempt in range(1, _MAX_RETRIES + 1):
@@ -113,7 +113,7 @@ class FoodLionSearcher:
                     return None, None
         return None, None
 
-    def _search_keyword_multi(self, keyword: str, product_name: str, tries: int = 3) -> tuple[dict | None, dict | None]:
+    def _search_keyword_multi(self, keyword: str, product_name: str, tries: int = 1) -> tuple[dict | None, dict | None]:
         """Search the same keyword up to `tries` times since Bing/Scrappey
         results can vary between identical requests. Returns as soon as a
         foodlion match is found; otherwise keeps the first usable fallback
