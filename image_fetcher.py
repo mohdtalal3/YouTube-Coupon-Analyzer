@@ -67,7 +67,6 @@ def fetch_coupon_images(
         img_path = output_dir / f"{safe_name}{ext}"
         proxies = {"http": proxy, "https": proxy} if proxy else None
         for attempt in range(1, 4):
-            print(f"Proxy: {proxy}")
             print(f"Image URL: {img_url}")
             try:
                 resp = cffi_requests.get(
