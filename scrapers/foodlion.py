@@ -39,10 +39,18 @@ class FoodLionSearcher:
     def _is_foodlion_url(url: str) -> bool:
         return "foodlion" in url.lower()
 
-    def _search_keyword(self, keyword: str, product_name: str, fallback_first: bool = False) -> dict | None:
-        """Run one Bing image search (via Scrappey) and return the first
-        result (among the top _TOP_N) whose product page (purl) is on
-        foodlion.com.
+    @staticmethod
+    def _is_wordpress_url(*urls: str) -> bool:
+        return any("wp-content" in u.lower() or "wordpress" in u.lower() for u in urls if u)
+
+    def _search_keyword(self, keyword: str, product_name: str) -> tuple[dict | None, dict | None]:
+        """Run one Bing image search (via Scrappey).
+
+        Returns a tuple ``(foodlion_result, fallback_result)`` where
+        ``foodlion_result`` is the first hit (among top _TOP_N) whose product
+        page (purl) contains "foodlion", and ``fallback_result`` is the first
+        hit overall that isn't hosted on a wordpress site (used only when no
+        foodlion match is found at all).
         """
         url = f"https://www.bing.com/images/search?q={quote(keyword)}&form=VNXTR&first=1"
         payload = {
@@ -61,12 +69,12 @@ class FoodLionSearcher:
                 html = data.get("solution", {}).get("response", "")
                 if not html:
                     print(f"  [foodlion] Scrappey returned no response for {keyword!r}: {data.get('data')}")
-                    return None
+                    return None, None
 
                 soup = BeautifulSoup(html, "html.parser")
                 tags = soup.select("li[data-idx] a.iusc")[:_TOP_N]
 
-                first_result = None
+                fallback_result = None
                 for tag in tags:
                     m_data = tag.get("m")
                     if not m_data:
@@ -91,22 +99,34 @@ class FoodLionSearcher:
                         "size":        "",
                     }
 
-                    if first_result is None:
-                        first_result = result
-
                     if self._is_foodlion_url(purl):
-                        return result
+                        return result, None
 
-                if fallback_first and first_result:
-                    return first_result
+                    if fallback_result is None and not self._is_wordpress_url(img_url, purl):
+                        fallback_result = result
 
-                return None  # request succeeded, no foodlion.com match in top _TOP_N
+                return None, fallback_result  # request succeeded, no foodlion.com match in top _TOP_N
 
             except Exception as e:
                 print(f"  [foodlion] Attempt {attempt}/{_MAX_RETRIES} failed for {keyword!r}: {e}")
                 if attempt == _MAX_RETRIES:
-                    return None
-        return None
+                    return None, None
+        return None, None
+
+    def _search_keyword_multi(self, keyword: str, product_name: str, tries: int = 3) -> tuple[dict | None, dict | None]:
+        """Search the same keyword up to `tries` times since Bing/Scrappey
+        results can vary between identical requests. Returns as soon as a
+        foodlion match is found; otherwise keeps the first usable fallback
+        result seen across all tries.
+        """
+        fallback_result = None
+        for i in range(tries):
+            foodlion_result, fallback = self._search_keyword(keyword, product_name)
+            if foodlion_result:
+                return foodlion_result, None
+            if fallback_result is None and fallback:
+                fallback_result = fallback
+        return None, fallback_result
 
     def search(self, product_name: str) -> dict | None:
         """Search for a product image and return a normalised dict or None if not found.
@@ -118,13 +138,17 @@ class FoodLionSearcher:
 
         Returned keys: name, price, image_url, product_url, description, brand, size
         """
-        result = self._search_keyword(f"{product_name} site:foodlion.com", product_name)
+        result, fallback_1 = self._search_keyword_multi(f"{product_name} site:foodlion.com", product_name)
         if result:
             return result
 
-        result = self._search_keyword(f"{product_name} foodlion", product_name, fallback_first=True)
+        result, fallback_2 = self._search_keyword_multi(f"{product_name} foodlion", product_name)
         if result:
             return result
+
+        fallback = fallback_2 or fallback_1
+        if fallback:
+            return fallback
 
         print(f"  [foodlion] Skipping {product_name!r} — no foodlion.com image in top {_TOP_N} results")
         return None
@@ -132,7 +156,7 @@ class FoodLionSearcher:
 
 if __name__ == "__main__":
     searcher = FoodLionSearcher(proxy=os.getenv("STATIC_PROXY"))
-    result = searcher.search("aveeno moisturizer")
+    result = searcher.search("Febreze Fabric Refresher")
     if result:
         print(json.dumps(result, indent=2, ensure_ascii=False))
     else:
