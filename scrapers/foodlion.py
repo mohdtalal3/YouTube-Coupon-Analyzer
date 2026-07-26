@@ -138,9 +138,9 @@ class FoodLionSearcher:
 
         Returned keys: name, price, image_url, product_url, description, brand, size
         """
-        # result, fallback_1 = self._search_keyword_multi(f"{product_name} site:foodlion.com", product_name)
-        # if result:
-        #     return result
+        result, fallback_1 = self._search_keyword_multi(f"{product_name} site:foodlion.com", product_name)
+        if result:
+            return result
 
         result, fallback_2 = self._search_keyword_multi(f"{product_name} foodlion", product_name)
         if result:
