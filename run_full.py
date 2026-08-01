@@ -29,6 +29,7 @@ import threading
 import time
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from datetime import datetime, timedelta
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -42,6 +43,28 @@ from generate import generate_images
 
 
 # ── HELPERS ───────────────────────────────────────────────────────────────────
+
+_SOURCE_DISPLAY_NAMES = {
+    "foodlion": "Food Lion",
+    "meijer":   "Meijer",
+    "heb":      "HEB",
+}
+
+
+def generate_coupon_title(source: str = "foodlion") -> str:
+    """Generate a dynamic title: 'Don't Miss These <Store> Couponing Deals (MM/DD – MM/DD)'.
+
+    Start date = today. End date = the next Saturday (if today is Saturday,
+    end date is 7 days from now).
+    """
+    store_name = _SOURCE_DISPLAY_NAMES.get(source, source.title())
+    today = datetime.now()
+    days_until_saturday = (5 - today.weekday()) % 7
+    if days_until_saturday == 0:
+        days_until_saturday = 7
+    end_date = today + timedelta(days=days_until_saturday)
+    return f"Don't Miss These {store_name} Couponing Deals ({today.strftime('%-m/%-d')} – {end_date.strftime('%-m/%-d')})"
+
 
 def print_section(title: str):
     print(f"\n{'=' * 60}")
@@ -444,8 +467,8 @@ def main():
             "--coupon",
             "--publish-target", args.publish_target,
         ]
-        if args.title:
-            publisher_cmd.extend(["--title", args.title])
+        title = args.title or generate_coupon_title(_source)
+        publisher_cmd.extend(["--title", title])
         if args.publish:
             publisher_cmd.append("--publish")
         else:

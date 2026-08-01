@@ -176,15 +176,7 @@ def build_page_html(products: list, img_urls: dict, video_url: Optional[str]) ->
     html = '<div id="top" class="aos-finds">\n'
     html += '  <h3 style="text-align: center;">Products from the Video</h3>\n\n'
 
-    if video_url:
-        html += (
-            f'  <p style="text-align: center; font-style: italic;">'
-            f'{total} products found — '
-            f'<a href="{video_url}" target="_blank" rel="noopener noreferrer">Watch the full video</a>'
-            f'</p>\n\n'
-        )
-    else:
-        html += f'  <p style="text-align: center; font-style: italic;">{total} products found</p>\n\n'
+    html += f'  <p style="text-align: center; font-style: italic;">{total} products found</p>\n\n'
 
     # Visible items
     html += '  <div class="aos-category-items">\n'
@@ -259,15 +251,7 @@ def build_coupon_page_html(deals: list, img_urls: dict, video_url: Optional[str]
     html = '<div id="top" class="aos-finds">\n'
     html += '  <h3 style="text-align: center;">Coupon Deals from the Video</h3>\n\n'
 
-    if video_url:
-        html += (
-            f'  <p style="text-align: center; font-style: italic;">'
-            f'{total} deals found \u2014 '
-            f'<a href="{video_url}" target="_blank" rel="noopener noreferrer">Watch the full video</a>'
-            f'</p>\n\n'
-        )
-    else:
-        html += f'  <p style="text-align: center; font-style: italic;">{total} deals found</p>\n\n'
+    html += f'  <p style="text-align: center; font-style: italic;">{total} deals found</p>\n\n'
 
     html += '  <div class="aos-category-items">\n'
 
