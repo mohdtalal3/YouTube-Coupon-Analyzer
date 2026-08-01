@@ -27,9 +27,13 @@ Each workspace's schedule config lives in:
     }
 """
 
+import json
+import os
 import threading
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo, available_timezones
+
+import urllib.request
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
@@ -124,6 +128,27 @@ def _which_keyword_matched(video: dict, channel_name: str, keywords: list[str]) 
         if kw in haystack:
             return kw
     return "?"
+
+
+def _send_slack_notification(lines: list[str]):
+    """Send scan summary to Slack via webhook URL from env (if configured)."""
+    webhook_url = os.getenv("SLACK_WEBHOOK_URL")
+    if not webhook_url:
+        return
+    try:
+        text = "\n".join(lines)
+        payload = json.dumps({"text": text}).encode("utf-8")
+        req = urllib.request.Request(
+            webhook_url,
+            data=payload,
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            resp.read()
+        print("[scheduler] Slack notification sent.")
+    except Exception as e:
+        print(f"[scheduler] Slack notification failed: {e}")
 
 
 def _log_scan_only(workspace_id: str, lines: list[str]):
@@ -254,6 +279,8 @@ def _do_scan(workspace_id: str, manual: bool = False):
             "last_errors": errors,
         },
     })
+
+    _send_slack_notification(scan_log_lines)
 
 
 def scan_workspace(workspace_id: str, manual: bool = False):
