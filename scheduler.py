@@ -104,28 +104,39 @@ def compute_next_run(schedule: dict | None, now: datetime | None = None) -> date
     return candidate
 
 
-def _match_keywords(video: dict, channel_name: str, keywords: list[str]) -> bool:
-    if not keywords:
-        return True
-    haystack = " ".join([
+def _normalize_keyword(s: str) -> str:
+    """Normalize a string for keyword matching: lowercase and strip hyphens/spaces.
+
+    e.g. 'H-E-B' -> 'heb', 'Food Lion' -> 'foodlion', 'food-lion' -> 'foodlion'
+    """
+    return s.lower().replace("-", "").replace(" ", "")
+
+
+def _build_haystack(video: dict, channel_name: str) -> str:
+    """Build a normalized haystack from video title, description, and channel name."""
+    raw = " ".join([
         video.get("title") or "",
         video.get("description") or "",
         channel_name or "",
-    ]).lower()
-    return any(kw in haystack for kw in keywords)
+    ])
+    # Normalize the full text so both 'h-e-b' and 'heb' collapse to 'heb'
+    return _normalize_keyword(raw)
+
+
+def _match_keywords(video: dict, channel_name: str, keywords: list[str]) -> bool:
+    if not keywords:
+        return True
+    haystack = _build_haystack(video, channel_name)
+    return any(_normalize_keyword(kw) in haystack for kw in keywords)
 
 
 def _which_keyword_matched(video: dict, channel_name: str, keywords: list[str]) -> str:
     """Return the first keyword that matched, or 'all' if no keywords configured."""
     if not keywords:
         return "all"
-    haystack = " ".join([
-        video.get("title") or "",
-        video.get("description") or "",
-        channel_name or "",
-    ]).lower()
+    haystack = _build_haystack(video, channel_name)
     for kw in keywords:
-        if kw in haystack:
+        if _normalize_keyword(kw) in haystack:
             return kw
     return "?"
 
