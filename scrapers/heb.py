@@ -7,7 +7,7 @@ import requests
 
 _BASE_URL = (
     "https://www.heb.com/_next/data/"
-    "718cc4690b17c6ae0b8e63fdd6c6f1f9e28eb98c/en/search.json"
+    "e3a12b41746b3f5bb71ba49ebe302e1f69cf8009/en/search.json"
 )
 
 _HEADERS = {
