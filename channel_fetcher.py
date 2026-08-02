@@ -92,17 +92,21 @@ def get_previous_weekday_window(
     now: datetime | None = None,
 ) -> tuple[datetime, datetime]:
     """
+    Return a (start, end) window where:
+      end   = now
+      start = the Wednesday before the most recent occurrence of the scheduled weekday
+
     Example:
 
     Run time:
-        Tuesday, July 21, 2026 at 15:00
+        Saturday, August 1, 2026 at 08:00
 
     Selected weekday:
-        Tuesday
+        Saturday
 
     Result:
-        start = Tuesday, July 14, 2026 at 00:00
-        end   = Tuesday, July 21, 2026 at 15:00
+        start = Wednesday, July 29, 2026 at 00:00
+        end   = Saturday, August 1, 2026 at 08:00
     """
     weekday_name = weekday_name.lower()
 
@@ -132,12 +136,9 @@ def get_previous_weekday_window(
         microsecond=0,
     )
 
-    # When today is the selected weekday,
-    # move back exactly one week.
-    if days_since_target == 0:
-        start_date = current_target_start - timedelta(days=7)
-    else:
-        start_date = current_target_start
+    # Start from the Wednesday of that same week (Wednesday = weekday 2)
+    days_back = (target_weekday - 2) % 7
+    start_date = current_target_start - timedelta(days=days_back)
 
     return start_date, now
 
