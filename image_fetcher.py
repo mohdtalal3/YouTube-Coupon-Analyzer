@@ -19,6 +19,7 @@ from curl_cffi import requests as cffi_requests
 _SOURCE_MAP = {
     "meijer": ("scrapers.meijer", "MeijerSearcher"),
     "foodlion": ("scrapers.foodlion", "FoodLionSearcher"),
+    "publix": ("scrapers.publix", "PublixSearcher"),
 }
 
 

@@ -48,6 +48,7 @@ _SOURCE_DISPLAY_NAMES = {
     "foodlion": "Food Lion",
     "meijer":   "Meijer",
     "heb":      "HEB",
+    "publix":   "Publix",
 }
 
 
@@ -255,6 +256,7 @@ def main():
     _IMAGE_ONLY_SOURCES = {
         "meijer": ("scrapers.meijer", "MeijerSearcher"),
         "foodlion": ("scrapers.foodlion", "FoodLionSearcher"),
+        "publix": ("scrapers.publix", "PublixSearcher"),
     }
 
     _source = args.source or "meijer"
