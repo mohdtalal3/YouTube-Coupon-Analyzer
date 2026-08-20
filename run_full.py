@@ -55,15 +55,11 @@ _SOURCE_DISPLAY_NAMES = {
 def generate_coupon_title(source: str = "foodlion") -> str:
     """Generate a dynamic title: 'Don't Miss These <Store> Couponing Deals (MM/DD – MM/DD)'.
 
-    Start date = today. End date = the next Saturday (if today is Saturday,
-    end date is 7 days from now).
+    Start date = today. End date = same weekday next week (7 days from today).
     """
     store_name = _SOURCE_DISPLAY_NAMES.get(source, source.title())
     today = datetime.now()
-    days_until_saturday = (5 - today.weekday()) % 7
-    if days_until_saturday == 0:
-        days_until_saturday = 7
-    end_date = today + timedelta(days=days_until_saturday)
+    end_date = today + timedelta(days=7)
     return f"Don't Miss These {store_name} Couponing Deals ({today.strftime('%-m/%-d')} – {end_date.strftime('%-m/%-d')})"
 
 
