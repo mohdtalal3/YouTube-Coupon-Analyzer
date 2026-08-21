@@ -1,8 +1,9 @@
 import json
 import os
 import sys
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
-import requests
+from curl_cffi import requests
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -22,7 +23,7 @@ _HEADERS = {
     "cache-control": "no-cache",
     "pragma": "no-cache",
     "referer": "https://www.kroger.com/",
-    "sec-ch-ua": '"Not=A?Brand";v="99", "Google Chrome";v="151", "Chromium";v="151"',
+    "sec-ch-ua": '"Not=A?Brand";v="99", "Google Chrome";v="131", "Chromium";v="131"',
     "sec-ch-ua-mobile": "?0",
     "sec-ch-ua-platform": '"macOS"',
     "sec-fetch-dest": "empty",
@@ -33,6 +34,9 @@ _HEADERS = {
         "AppleWebKit/537.36 (KHTML, like Gecko) "
         "Chrome/151.0.0.0 Safari/537.36"
     ),
+    "priority": "u=1, i",
+    "sec-ch-device-memory": "16",
+    "sec-ch-viewport-width": "1401",
     "kroger-visitor-id": "0088f2e2-911c-1c10-dafe-1d00a6098db8",
     "x-ab-test": '[{"testID":"0b2aa3","testOrigin":"d3","testVersion":"A"},{"testID":"378f49","testOrigin":"9e","testVersion":"B"}]',
     "x-dtreferer": "https://www.kroger.com/",
@@ -100,6 +104,7 @@ class KrogerSearcher:
                     headers=_HEADERS,
                     proxies=self.proxies,
                     timeout=30,
+                    impersonate="chrome131",
                 )
                 resp.raise_for_status()
                 data = resp.json()
@@ -137,10 +142,13 @@ class KrogerSearcher:
         Returns {keyword: normalised product dict or None}.
         """
         keyword_upc: dict[str, str] = {}
-        for name in product_names:
-            upcs = self._search_upcs(name)
-            if upcs:
-                keyword_upc[name] = upcs[0]
+        with ThreadPoolExecutor(max_workers=5) as pool:
+            futures = {pool.submit(self._search_upcs, name): name for name in product_names}
+            for fut in as_completed(futures):
+                name = futures[fut]
+                upcs = fut.result()
+                if upcs:
+                    keyword_upc[name] = upcs[0]
 
         if not keyword_upc:
             return {name: None for name in product_names}
@@ -188,6 +196,7 @@ class KrogerSearcher:
                     headers=_HEADERS,
                     proxies=self.proxies,
                     timeout=30,
+                    impersonate="chrome131",
                 )
                 resp.raise_for_status()
                 data = resp.json()
