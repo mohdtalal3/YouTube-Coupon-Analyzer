@@ -160,9 +160,9 @@ def render_item_html(item_index: int, product: dict, img_url: Optional[str], def
     # AI-generated image
     if img_url:
         if defer_image:
-            img_tag = f'<img data-src="{img_url}" alt="{title_safe}" style="max-width: 100%; height: auto;" class="lazy-load" />'
+            img_tag = f'<img data-src="{img_url}" alt="{title_safe}" style="max-width: 400px; width: 100%; height: auto;" class="lazy-load" />'
         else:
-            img_tag = f'<img src="{img_url}" alt="{title_safe}" style="max-width: 100%; height: auto;" />'
+            img_tag = f'<img src="{img_url}" alt="{title_safe}" style="max-width: 400px; width: 100%; height: auto;" />'
         html += f'<div style="text-align: center; margin-top: 10px; padding: 10px;">{img_tag}</div>'
 
     html += '</div>'
@@ -224,9 +224,9 @@ def render_coupon_html(item_index: int, deal: dict, img_url: Optional[str] = Non
 
     if img_url:
         if defer_image:
-            img_tag = f'<img data-src="{img_url}" alt="{title_safe}" style="max-width: 100%; height: auto;" class="lazy-load" />'
+            img_tag = f'<img data-src="{img_url}" alt="{title_safe}" style="max-width: 400px; width: 100%; height: auto;" class="lazy-load" />'
         else:
-            img_tag = f'<img src="{img_url}" alt="{title_safe}" style="max-width: 100%; height: auto;" />'
+            img_tag = f'<img src="{img_url}" alt="{title_safe}" style="max-width: 400px; width: 100%; height: auto;" />'
         html += f'<div style="text-align: center; margin-top: 10px; padding: 10px;">{img_tag}</div>'
 
     if description:
