@@ -20,6 +20,7 @@ _SOURCE_MAP = {
     "meijer": ("scrapers.meijer", "MeijerSearcher"),
     "foodlion": ("scrapers.foodlion", "FoodLionSearcher"),
     "publix": ("scrapers.publix", "PublixSearcher"),
+    "kroger": ("scrapers.kroger", "KrogerSearcher"),
 }
 
 
@@ -48,12 +49,23 @@ def fetch_coupon_images(
 
     searcher = SearcherClass(proxy=proxy)
 
+    # Batch search: sources with search_many() (e.g. Kroger) collect UPCs
+    # per keyword, then fetch ALL products in a single request.
+    batch_results: dict[str, dict] = {}
+    if hasattr(searcher, "search_many"):
+        names = [d.get("name", "").strip() for d in deals]
+        names = [n for n in names if n]
+        batch_results = searcher.search_many(names)
+
     def _fetch_one(deal: dict) -> dict:
         name = deal.get("name", "").strip()
         if not name:
             return deal
-        print(f"  [{source}] Searching: {name}")
-        result = searcher.search(name)
+        if batch_results:
+            result = batch_results.get(name)
+        else:
+            print(f"  [{source}] Searching: {name}")
+            result = searcher.search(name)
         if not result:
             print(f"    ⚠️  Not found on {source}: {name}")
             return deal

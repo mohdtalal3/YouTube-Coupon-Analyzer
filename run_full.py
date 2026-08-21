@@ -49,6 +49,7 @@ _SOURCE_DISPLAY_NAMES = {
     "meijer":   "Meijer",
     "heb":      "HEB",
     "publix":   "Publix",
+    "kroger":   "Kroger",
 }
 
 
@@ -257,6 +258,7 @@ def main():
         "meijer": ("scrapers.meijer", "MeijerSearcher"),
         "foodlion": ("scrapers.foodlion", "FoodLionSearcher"),
         "publix": ("scrapers.publix", "PublixSearcher"),
+        "kroger": ("scrapers.kroger", "KrogerSearcher"),
     }
 
     _source = args.source or "meijer"
