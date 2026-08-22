@@ -160,10 +160,24 @@ def render_item_html(item_index: int, product: dict, img_url: Optional[str], def
     # AI-generated image
     if img_url:
         if defer_image:
-            img_tag = f'<img data-src="{img_url}" alt="{title_safe}" style="max-width: 400px; width: 100%; height: auto;" class="lazy-load" />'
+            img_tag = f'<img data-src="{img_url}" alt="{title_safe}" style="max-width: 400px; width: 100%; height: auto; display: block;" class="lazy-load" />'
         else:
-            img_tag = f'<img src="{img_url}" alt="{title_safe}" style="max-width: 400px; width: 100%; height: auto;" />'
-        html += f'<div style="text-align: center; margin-top: 10px; padding: 10px;">{img_tag}</div>'
+            img_tag = f'<img src="{img_url}" alt="{title_safe}" style="max-width: 400px; width: 100%; height: auto; display: block;" />'
+
+        price_badge = ""
+        if price is not None:
+            formatted = f"${price:.2f}" if price != int(price) else f"${int(price)}"
+            price_badge = (
+                f'<span style="position:absolute;top:8px;right:8px;background:#e63c3c;color:#fff;'
+                f'font-weight:700;font-size:1em;padding:4px 10px;border-radius:6px;'
+                f'box-shadow:0 1px 4px rgba(0,0,0,0.3);">{formatted}</span>'
+            )
+
+        html += (
+            f'<div style="text-align: center; margin-top: 10px; padding: 10px;">'
+            f'<div style="position:relative;display:inline-block;max-width:400px;width:100%;">'
+            f'{img_tag}{price_badge}</div></div>'
+        )
 
     html += '</div>'
     return html
@@ -217,17 +231,29 @@ def render_coupon_html(item_index: int, deal: dict, img_url: Optional[str] = Non
 
     title = name if name else f"Deal #{item_index}"
     title_safe = title.replace('"', '&quot;')
-    price_part = f" \u2013 {price}" if price else ""
 
     html = f'    <div class="finds-item">'
-    html += f'<h3 style="margin-bottom:6px;">{title}{price_part}</h3>'
+    html += f'<h3 style="margin-bottom:6px;">{title}</h3>'
 
     if img_url:
         if defer_image:
-            img_tag = f'<img data-src="{img_url}" alt="{title_safe}" style="max-width: 400px; width: 100%; height: auto;" class="lazy-load" />'
+            img_tag = f'<img data-src="{img_url}" alt="{title_safe}" style="max-width: 400px; width: 100%; height: auto; display: block;" class="lazy-load" />'
         else:
-            img_tag = f'<img src="{img_url}" alt="{title_safe}" style="max-width: 400px; width: 100%; height: auto;" />'
-        html += f'<div style="text-align: center; margin-top: 10px; padding: 10px;">{img_tag}</div>'
+            img_tag = f'<img src="{img_url}" alt="{title_safe}" style="max-width: 400px; width: 100%; height: auto; display: block;" />'
+
+        price_badge = ""
+        if price:
+            price_badge = (
+                f'<span style="position:absolute;top:8px;right:8px;background:#e63c3c;color:#fff;'
+                f'font-weight:700;font-size:1em;padding:4px 10px;border-radius:6px;'
+                f'box-shadow:0 1px 4px rgba(0,0,0,0.3);">{price}</span>'
+            )
+
+        html += (
+            f'<div style="text-align: center; margin-top: 10px; padding: 10px;">'
+            f'<div style="position:relative;display:inline-block;max-width:400px;width:100%;">'
+            f'{img_tag}{price_badge}</div></div>'
+        )
 
     if description:
         html += '<p style="margin:8px 0 4px;font-weight:600;">Description:</p>'
@@ -249,7 +275,6 @@ def build_coupon_page_html(deals: list, img_urls: dict, video_url: Optional[str]
     total = len(deals)
 
     html = '<div id="top" class="aos-finds">\n'
-    html += '  <h3 style="text-align: center;">Coupon Deals from the Video</h3>\n\n'
 
     html += f'  <p style="text-align: center; font-style: italic;">{total} deals found</p>\n\n'
 
